@@ -41,7 +41,7 @@ on:
       coverity_compiler_template_list:
         type: string
         default: >-
-          arm-openwrt-linux-gcc
+          arm-immortalwrt-linux-gcc
       coverity_force_compile_packages:
         type: string
         default: >-
@@ -93,10 +93,10 @@ jobs:
 
       # Per branch tools container tag
       # By default stick to latest
-      # For official test targetting openwrt stable branch
+      # For official test targetting immortalwrt stable branch
       # Get the branch or parse the tag and push dedicated tools containers
       # For local test to use the correct container for stable release testing
-      # you need to use for the branch name a prefix of openwrt-[0-9][0-9].[0-9][0-9]-
+      # you need to use for the branch name a prefix of immortalwrt-[0-9][0-9].[0-9][0-9]-
       - name: Determine tools container tag
         id: determine_tools_container
         run: |
@@ -171,14 +171,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: openwrt/routing
-          path: openwrt/feeds/routing
+          path: immortalwrt/feeds/routing
 
       - name: Checkout telephony feed
         if: inputs.include_feeds == true
         uses: actions/checkout@v3
         with:
           repository: openwrt/telephony
-          path: openwrt/feeds/telephony
+          path: immortalwrt/feeds/telephony
 
       - name: Parse toolchain file
         if: inputs.build_toolchain == false
