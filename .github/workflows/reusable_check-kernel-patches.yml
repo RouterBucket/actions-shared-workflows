@@ -34,34 +34,34 @@ jobs:
             | tr '[:upper:]' '[:lower:]')
 
           if [ ${{ inputs.use_openwrt_container }} == "true" ]; then
-            OWNER_LC=openwrt
+            OWNER_LC=RouterBucket
           fi
 
           echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
 
       # Per branch tools container tag
       # By default stick to latest
-      # For official test targetting openwrt stable branch
+      # For official test targetting immortalwrt stable branch
       # Get the branch or parse the tag and push dedicated tools containers
       # For local test to use the correct container for stable release testing
-      # you need to use for the branch name a prefix of openwrt-[0-9][0-9].[0-9][0-9]-
+      # you need to use for the branch name a prefix of immortalwrt-[0-9][0-9].[0-9][0-9]-
       - name: Determine tools container tag
         id: determine_tools_container
         run: |
           CONTAINER_TAG=latest
           if [ -n "${{ github.base_ref }}" ]; then
-            if echo "${{ github.base_ref }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
+            if echo "${{ github.base_ref }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]$'; then
               CONTAINER_TAG="${{ github.base_ref }}"
             fi
           elif [ ${{ github.ref_type }} == "branch" ]; then
-            if echo "${{ github.ref_name }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
+            if echo "${{ github.ref_name }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]$'; then
               CONTAINER_TAG=${{ github.ref_name }}
-            elif echo "${{ github.ref_name }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]-'; then
-              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(openwrt-[0-9][0-9]\.[0-9][0-9]\)-.*/\1/')"
+            elif echo "${{ github.ref_name }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]-'; then
+              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(immortalwrt-[0-9][0-9]\.[0-9][0-9]\)-.*/\1/')"
             fi
           elif [ ${{ github.ref_type }} == "tag" ]; then
             if echo "${{ github.ref_name }}" | grep -q -E '^v[0-9][0-9]\.[0-9][0-9]\..+'; then
-              CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/^v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+              CONTAINER_TAG=immortalwrt-"$(echo ${{ github.ref_name }} | sed 's/^v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
             fi
           fi
           echo "Tools container to use tools:$CONTAINER_TAG"
@@ -82,15 +82,15 @@ jobs:
       - name: Checkout master directory
         uses: actions/checkout@v3
         with:
-          path: openwrt
+          path: immortalwrt
 
       - name: Fix permission
         run: |
-          chown -R buildbot:buildbot openwrt
+          chown -R buildbot:buildbot immortalwrt
 
       - name: Prepare prebuilt tools
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           mkdir -p staging_dir build_dir
           ln -sf /prebuilt_tools/staging_dir/host staging_dir/host
@@ -101,13 +101,13 @@ jobs:
       - name: Configure testing kernel
         if: inputs.testing == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_TESTING_KERNEL=y >> .config
 
       - name: Configure system
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_ALL_KMODS=y >> .config
           echo CONFIG_DEVEL=y >> .config
@@ -121,17 +121,17 @@ jobs:
 
       - name: Build tools
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make tools/quilt/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Refresh Kernel patches
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make target/linux/refresh V=s
 
       - name: Validate Refreshed Kernel Patches
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           . .github/workflows/scripts/ci_helpers.sh
 
@@ -152,4 +152,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.target }}-${{ inputs.subtarget }}-refreshed
-          path: openwrt/${{ inputs.target }}-${{ inputs.subtarget }}-refreshed
+          path: immortalwrt/${{ inputs.target }}-${{ inputs.subtarget }}-refreshed
