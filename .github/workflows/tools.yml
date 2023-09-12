@@ -16,13 +16,13 @@ jobs:
 
       - name: Setup MacOS
         run: |
-          echo "WORKPATH=/Volumes/OpenWrt" >> "$GITHUB_ENV"
-          hdiutil create -size 20g -type SPARSE -fs "Case-sensitive HFS+" -volname OpenWrt OpenWrt.sparseimage
-          hdiutil attach OpenWrt.sparseimage
-          mv "$GITHUB_WORKSPACE/openwrt" /Volumes/OpenWrt/
+          echo "WORKPATH=/Volumes/ImmortalWrt" >> "$GITHUB_ENV"
+          hdiutil create -size 20g -type SPARSE -fs "Case-sensitive HFS+" -volname ImmortalWrt ImmortalWrt.sparseimage
+          hdiutil attach ImmortalWrt.sparseimage
+          mv "$GITHUB_WORKSPACE/immortalwrt" /Volumes/ImmortalWrt/
 
       - name: Install required prereq on MacOS
-        working-directory: ${{ env.WORKPATH }}/openwrt
+        working-directory: ${{ env.WORKPATH }}/immortalwrt
         run: |
           brew install \
             automake \
@@ -49,11 +49,11 @@ jobs:
             echo "/usr/sbin" >> "$GITHUB_PATH"
 
       - name: Make prereq
-        working-directory: ${{ env.WORKPATH }}/openwrt
+        working-directory: ${{ env.WORKPATH }}/immortalwrt
         run: make defconfig
 
       - name: Build tools MacOS
-        working-directory: ${{ env.WORKPATH }}/openwrt
+        working-directory: ${{ env.WORKPATH }}/immortalwrt
         run: make tools/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Upload logs
@@ -61,14 +61,14 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: macos-latest-logs
-          path: ${{ env.WORKPATH }}/openwrt/logs
+          path: ${{ env.WORKPATH }}/immortalwrt/logs
 
       - name: Upload config
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: macos-latest-config
-          path: ${{ env.WORKPATH }}/openwrt/.config
+          path: ${{ env.WORKPATH }}/immortalwrt/.config
 
   build-linux-buildbot:
     name: Build tools with buildbot container
