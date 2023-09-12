@@ -6,7 +6,7 @@ on:
 jobs:
   determine-container-info:
     name: Determine needed info to push containers
-    if: ${{ github.repository_owner  == 'openwrt' }}
+    if: ${{ github.repository_owner  == 'RouterBucket' }}
     runs-on: ubuntu-latest
     outputs:
       owner-lc: ${{ steps.generate-owner-lc.outputs.owner-lc }}
@@ -22,24 +22,24 @@ jobs:
 
       # Per branch tools container tag
       # By default stick to latest
-      # For official test targetting openwrt stable branch
+      # For official test targetting immortalwrt stable branch
       # Get the branch or parse the tag and push dedicated tools containers
-      # Any branch that will match this pattern openwrt-[0-9][0-9].[0-9][0-9]
+      # Any branch that will match this pattern immortalwrt-[0-9][0-9].[0-9][0-9]
       # will refresh the tools container with the matching tag.
-      # (example branch openwrt-22.03 -> tools:openwrt-22.03)
-      # (example branch openwrt-22.03-test -> tools:openwrt-22.03)
+      # (example branch immortalwrt-22.03 -> tools:immortalwrt-22.03)
+      # (example branch immortalwrt-22.03-test -> tools:immortalwrt-22.03)
       - name: Determine tools container tag
         id: determine-container-tag
         run: |
           CONTAINER_TAG=latest
 
           if [ ${{ github.ref_type }} == "branch" ]; then
-            if echo "${{ github.ref_name }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
-              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(openwrt-[0-9][0-9]\.[0-9][0-9]\).*/\1/')"
+            if echo "${{ github.ref_name }}" | grep -q -E 'immortalwrt-[0-9][0-9]\.[0-9][0-9]'; then
+              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(immortalwrt-[0-9][0-9]\.[0-9][0-9]\).*/\1/')"
             fi
           elif [ ${{ github.ref_type }} == "tag" ]; then
             if echo "${{ github.ref_name }}" | grep -q -E 'v[0-9][0-9]\.[0-9][0-9]\..+'; then
-              CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+              CONTAINER_TAG=immortalwrt-"$(echo ${{ github.ref_name }} | sed 's/v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
             fi
           fi
 
@@ -48,14 +48,14 @@ jobs:
 
   build-linux-buildbot:
     name: Build tools with buildbot container
-    if: ${{ github.repository_owner  == 'openwrt' }}
+    if: ${{ github.repository_owner  == 'RouterBucket' }}
     uses: ./.github/workflows/reusable_build-tools.yml
     with:
       generate_prebuilt_artifacts: true
 
   push-tools-container:
     needs: [ determine-container-info, build-linux-buildbot ]
-    if: ${{ github.repository_owner  == 'openwrt' }}
+    if: ${{ github.repository_owner  == 'RouterBucket' }}
     name: Push prebuilt tools container
     runs-on: ubuntu-latest
 
@@ -67,7 +67,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          repository: openwrt/actions-shared-workflows
+          repository: RouterBucket/actions-shared-workflows
 
       - name: Download prebuilt tools from build job
         uses: actions/download-artifact@v3
@@ -94,7 +94,7 @@ jobs:
 
   determine-targets:
     name: Set targets
-    if: ${{ github.repository_owner  == 'openwrt' }}
+    if: ${{ github.repository_owner  == 'RouterBucket' }}
     runs-on: ubuntu-latest
     outputs:
       target: ${{ steps.find_targets.outputs.target }}
@@ -127,7 +127,7 @@ jobs:
 
   build:
     name: Build Target Toolchain
-    if: ${{ github.repository_owner  == 'openwrt' }}
+    if: ${{ github.repository_owner  == 'RouterBucket' }}
     needs: [ determine-targets, push-tools-container ]
     permissions:
       contents: read
@@ -147,7 +147,7 @@ jobs:
 
   push-toolchain-container:
     name: Push Target Toolchain container
-    if: ${{ github.repository_owner  == 'openwrt' }}
+    if: ${{ github.repository_owner  == 'RouterBucket' }}
     needs: [ determine-container-info, determine-targets, build ]
     runs-on: ubuntu-latest
 
@@ -164,7 +164,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          repository: openwrt/actions-shared-workflows
+          repository: RouterBucket/actions-shared-workflows
 
       - name: Download external toolchain from build job
         uses: actions/download-artifact@v3
