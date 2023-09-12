@@ -86,7 +86,7 @@ jobs:
             | tr '[:upper:]' '[:lower:]')
 
           if [ ${{ inputs.use_openwrt_container }} == "true" ]; then
-            OWNER_LC=RouterBucket
+            OWNER_LC=routerbucket
           fi
 
           echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
@@ -239,7 +239,7 @@ jobs:
         if: inputs.use_ccache_cache == true
         working-directory: immortalwrt
         run: |
-          S3_LINK=https://s3-ccache.openwrt-ci.ansuel.com
+          S3_LINK=https://s3-ccache.computandotech.com.br
           CCACHE_TAR=ccache-${{ inputs.ccache_type }}-${{ inputs.target }}-${{ inputs.subtarget }}.tar
 
           if curl -o /dev/null -s --head --fail $S3_LINK/$CCACHE_TAR; then
