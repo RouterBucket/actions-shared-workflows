@@ -35,7 +35,7 @@ on:
         default: true
       coverity_project_name:
         type: string
-        default: OpenWrt
+        default: immortalwrt
       coverity_check_packages:
         type: string
       coverity_compiler_template_list:
@@ -86,7 +86,7 @@ jobs:
             | tr '[:upper:]' '[:lower:]')
 
           if [ ${{ inputs.use_openwrt_container }} == "true" ]; then
-            OWNER_LC=openwrt
+            OWNER_LC=RouterBucket
           fi
 
           echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
@@ -103,18 +103,18 @@ jobs:
           CONTAINER_NAME=${{ inputs.container_name }}
           CONTAINER_TAG=latest
           if [ -n "${{ github.base_ref }}" ]; then
-            if echo "${{ github.base_ref }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
+            if echo "${{ github.base_ref }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]$'; then
               CONTAINER_TAG="${{ github.base_ref }}"
             fi
           elif [ ${{ github.ref_type }} == "branch" ]; then
-            if echo "${{ github.ref_name }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
+            if echo "${{ github.ref_name }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]$'; then
               CONTAINER_TAG=${{ github.ref_name }}
-            elif echo "${{ github.ref_name }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]-'; then
-              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(openwrt-[0-9][0-9]\.[0-9][0-9]\)-.*/\1/')"
+            elif echo "${{ github.ref_name }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]-'; then
+              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(immortalwrt-[0-9][0-9]\.[0-9][0-9]\)-.*/\1/')"
             fi
           elif [ ${{ github.ref_type }} == "tag" ]; then
             if echo "${{ github.ref_name }}" | grep -q -E '^v[0-9][0-9]\.[0-9][0-9]\..+'; then
-              CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/^v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+              CONTAINER_TAG=immortalwrt-"$(echo ${{ github.ref_name }} | sed 's/^v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
             fi
           fi
 
@@ -150,21 +150,21 @@ jobs:
       - name: Checkout master directory
         uses: actions/checkout@v3
         with:
-          path: openwrt
+          path: immortalwrt
 
       - name: Checkout packages feed
         if: inputs.include_feeds == true
         uses: actions/checkout@v3
         with:
-          repository: openwrt/packages
-          path: openwrt/feeds/packages
+          repository: immortalwrt/packages
+          path: immortalwrt/feeds/packages
 
       - name: Checkout luci feed
         if: inputs.include_feeds == true
         uses: actions/checkout@v3
         with:
-          repository: openwrt/luci
-          path: openwrt/feeds/luci
+          repository: immortalwrt/luci
+          path: immortalwrt/feeds/luci
 
       - name: Checkout routing feed
         if: inputs.include_feeds == true
@@ -183,7 +183,7 @@ jobs:
       - name: Parse toolchain file
         if: inputs.build_toolchain == false
         id: parse-toolchain
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           if [ -d /external-toolchain/ ]; then
             echo "toolchain-type=external_container" >> $GITHUB_OUTPUT
@@ -193,14 +193,14 @@ jobs:
           TOOLCHAIN_PATH=snapshots
 
           if [ -n "${{ github.base_ref }}" ]; then
-            if echo "${{ github.base_ref }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
-              major_ver="$(echo ${{ github.base_ref }} | sed 's/^openwrt-/v/')"
+            if echo "${{ github.base_ref }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]$'; then
+              major_ver="$(echo ${{ github.base_ref }} | sed 's/^immortalwrt-/v/')"
             fi
           elif [ "${{ github.ref_type }}" = "branch" ]; then
-            if echo "${{ github.ref_name }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
-              major_ver="$(echo ${{ github.ref_name }} | sed 's/^openwrt-/v/')"
-            elif echo "${{ github.ref_name }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]-'; then
-              major_ver="$(echo ${{ github.ref_name }} | sed 's/^openwrt-\([0-9][0-9]\.[0-9][0-9]\)-.*/v\1/')"
+            if echo "${{ github.ref_name }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]$'; then
+              major_ver="$(echo ${{ github.ref_name }} | sed 's/^immortalwrt-/v/')"
+            elif echo "${{ github.ref_name }}" | grep -q -E '^immortalwrt-[0-9][0-9]\.[0-9][0-9]-'; then
+              major_ver="$(echo ${{ github.ref_name }} | sed 's/^immortalwrt-\([0-9][0-9]\.[0-9][0-9]\)-.*/v\1/')"
             fi
           elif [ "${{ github.ref_type }}" = "tag" ]; then
             if echo "${{ github.ref_name }}" | grep -q -E '^v[0-9][0-9]\.[0-9][0-9]\..+'; then
@@ -216,15 +216,15 @@ jobs:
             fi
           fi
 
-          SUMS_FILE="https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums"
-          if curl $SUMS_FILE | grep -q ".*openwrt-toolchain.*tar.xz"; then
-            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-toolchain.*tar.xz")"
-            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
+          SUMS_FILE="https://downloads.immortalwrt.org/$TOOLCHAIN_PATH/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums"
+          if curl $SUMS_FILE | grep -q ".*immortalwrt-toolchain.*tar.xz"; then
+            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*immortalwrt-toolchain.*tar.xz")"
+            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(immortalwrt-toolchain.*\).tar.xz/\1/p')
             
             echo "toolchain-type=external_toolchain" >> $GITHUB_OUTPUT
-          elif curl $SUMS_FILE | grep -q ".*openwrt-sdk.*tar.xz"; then
-            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-sdk.*tar.xz")"
-            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-sdk.*\).tar.xz/\1/p')
+          elif curl $SUMS_FILE | grep -q ".*immortalwrt-sdk.*tar.xz"; then
+            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*immortalwrt-sdk.*tar.xz")"
+            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(immortalwrt-sdk.*\).tar.xz/\1/p')
 
             echo "toolchain-type=external_sdk" >> $GITHUB_OUTPUT
           else
@@ -237,7 +237,7 @@ jobs:
       - name: Download and extract ccache cache from s3
         id: restore-ccache-cache-s3
         if: inputs.use_ccache_cache == true
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           S3_LINK=https://s3-ccache.openwrt-ci.ansuel.com
           CCACHE_TAR=ccache-${{ inputs.ccache_type }}-${{ inputs.target }}-${{ inputs.subtarget }}.tar
@@ -249,11 +249,11 @@ jobs:
 
       - name: Fix permission
         run: |
-          chown -R buildbot:buildbot openwrt
+          chown -R buildbot:buildbot immortalwrt
 
       - name: Prepare prebuilt tools
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           mkdir -p staging_dir build_dir
           ln -s /prebuilt_tools/staging_dir/host staging_dir/host
@@ -264,7 +264,7 @@ jobs:
       - name: Update & Install feeds
         if: inputs.include_feeds == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
@@ -274,8 +274,8 @@ jobs:
         if: inputs.use_ccache_cache == true && steps.restore-ccache-cache-s3.outputs.cache-hit != 'true'
         uses: actions/cache/restore@v3
         with:
-          path: openwrt/.ccache
-          key: ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-${{ hashFiles('openwrt/include/kernel-**') }}
+          path: immortalwrt/.ccache
+          key: ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-${{ hashFiles('immortalwrt/include/kernel-**') }}
           restore-keys: |
             ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-
 
@@ -287,11 +287,11 @@ jobs:
       - name: Download external toolchain/sdk
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type != 'internal' && steps.parse-toolchain.outputs.toolchain-type != 'external_container'
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
-          wget https://downloads.cdn.openwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/${{ env.TOOLCHAIN_FILE }}.tar.xz
-          wget https://downloads.cdn.openwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums.asc
-          wget https://downloads.cdn.openwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums
+          wget https://downloads.immortalwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/${{ env.TOOLCHAIN_FILE }}.tar.xz
+          wget https://downloads.immortalwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums.asc
+          wget https://downloads.immortalwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums
           gpg --with-fingerprint --verify sha256sums.asc
           sha256sum --check --ignore-missing sha256sums
           tar --xz -xf ${{ env.TOOLCHAIN_FILE }}.tar.xz
@@ -300,34 +300,34 @@ jobs:
       - name: Configure testing kernel
         if: inputs.testing == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_TESTING_KERNEL=y >> .config
 
       - name: Configure KERNEL_WERROR
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_KERNEL_WERROR=y >> .config
 
       - name: Configure all kernel modules
         if: inputs.build_all_kmods == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_ALL_KMODS=y >> .config
 
       - name: Configure all modules
         if: inputs.build_all_modules == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_ALL=y >> .config
 
       - name: Configure all boards
         if: inputs.build_all_boards == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_TARGET_MULTI_PROFILE=y >> .config
           echo CONFIG_TARGET_PER_DEVICE_ROOTFS=y >> .config
@@ -341,7 +341,7 @@ jobs:
       - name: Configure ccache and apply fixes
         if: inputs.use_ccache_cache == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         env:
           SYSTEM_CCACHE_CONF: staging_dir/host/etc/ccache.conf
         run: |
@@ -354,20 +354,20 @@ jobs:
       - name: Configure external toolchain in container
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_container'
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
 
           ./scripts/ext-toolchain.sh \
-            --toolchain /external-toolchain/$(ls /external-toolchain/ | grep openwrt-toolchain)/toolchain-* \
+            --toolchain /external-toolchain/$(ls /external-toolchain/ | grep immortalwrt-toolchain)/toolchain-* \
             --overwrite-config \
             --config ${{ inputs.target }}/${{ inputs.subtarget }}
 
       - name: Configure external toolchain
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_toolchain'
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
@@ -380,11 +380,11 @@ jobs:
       - name: Adapt external sdk to external toolchain format
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_sdk'
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           TOOLCHAIN_DIR=${{ env.TOOLCHAIN_FILE }}/staging_dir/$(ls ${{ env.TOOLCHAIN_FILE }}/staging_dir | grep toolchain)
           TOOLCHAIN_BIN=$TOOLCHAIN_DIR/bin
-          OPENWRT_DIR=$(pwd)
+          IMMORTALWRT_DIR=$(pwd)
 
           # Find target name from toolchain info.mk
           GNU_TARGET_NAME=$(cat $TOOLCHAIN_DIR/info.mk | grep TARGET_CROSS | sed 's/^TARGET_CROSS=\(.*\)-$/\1/')
@@ -399,7 +399,7 @@ jobs:
           done
 
           # Setup the wrapper script in the sdk toolchain dir simulating an external toolchain build
-          cp $OPENWRT_DIR/target/toolchain/files/wrapper.sh $GNU_TARGET_NAME-wrapper.sh
+          cp $IMMORTALWRT_DIR/target/toolchain/files/wrapper.sh $GNU_TARGET_NAME-wrapper.sh
           for app in cc gcc g++ c++ cpp ld as ; do
             [ -f $GNU_TARGET_NAME-$app ] && mv $GNU_TARGET_NAME-$app $GNU_TARGET_NAME-$app.bin
             ln -sf $GNU_TARGET_NAME-wrapper.sh $GNU_TARGET_NAME-$app
@@ -408,7 +408,7 @@ jobs:
       - name: Configure external toolchain with sdk
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_sdk'
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
@@ -421,7 +421,7 @@ jobs:
       - name: Configure internal toolchain
         if: inputs.build_toolchain == true || steps.parse-toolchain.outputs.toolchain-type == 'internal'
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
@@ -433,47 +433,47 @@ jobs:
 
       - name: Show configuration
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: ./scripts/diffconfig.sh
 
       - name: Build tools
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make tools/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Build toolchain
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make toolchain/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Build Kernel
         if: inputs.build_kernel == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make target/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Build Kernel Kmods
         if: inputs.build_kernel == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make package/linux/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Build everything
         if: inputs.build_full == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Build external toolchain
         if: inputs.build_external_toolchain == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make target/toolchain/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Coverity prepare toolchain
         if: inputs.coverity_check_packages != ''
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           wget -q https://scan.coverity.com/download/linux64 --post-data "token=${{ secrets.coverity_api_token }}&project=${{ inputs.coverity_project_name }}" -O coverity.tar.gz
           wget -q https://scan.coverity.com/download/linux64 --post-data "token=${{ secrets.coverity_api_token }}&project=${{ inputs.coverity_project_name }}&md5=1" -O coverity.tar.gz.md5
@@ -491,7 +491,7 @@ jobs:
       - name: Clean and recompile packages with Coverity toolchain
         if: inputs.coverity_check_packages != ''
         shell: su buildbot -c "bash {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           set -o pipefail -o errexit
 
@@ -510,15 +510,15 @@ jobs:
       - name: Upload build to Coverity for analysis
         if: inputs.coverity_check_packages != ''
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           tar czf cov-int.tar.gz ./cov-int
           curl \
             --form token="${{ secrets.coverity_api_token }}" \
-            --form email="contact@openwrt.org" \
+            --form email="gustavo.mathias.rocha@gmail.com" \
             --form file=@cov-int.tar.gz \
             --form version="${{ github.ref_name }}-${{ github.sha }}" \
-            --form description="OpenWrt ${{ github.ref_name }}-${{ github.sha }}" \
+            --form description="ImmortalWrt ${{ github.ref_name }}-${{ github.sha }}" \
             "https://scan.coverity.com/builds?project=${{ inputs.coverity_project_name }}"
 
       - name: Upload logs
@@ -526,7 +526,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.target }}-${{ inputs.subtarget }}-logs
-          path: "openwrt/logs"
+          path: "immortalwrt/logs"
 
       - name: Delete already present ccache cache
         if: steps.restore-ccache-cache.outputs.cache-hit == 'true' && inputs.use_ccache_cache == true  &&
@@ -544,14 +544,14 @@ jobs:
           steps.restore-ccache-cache-s3.outputs.cache-hit != 'true'
         uses: actions/cache/save@v3
         with:
-          path: openwrt/.ccache
+          path: immortalwrt/.ccache
           key: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
 
       - name: Archive ccache
         if: inputs.use_ccache_cache == true  && github.event_name == 'push' &&
           inputs.upload_ccache_cache == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: tar -cf ccache-${{ inputs.ccache_type }}-${{ inputs.target }}-${{ inputs.subtarget }}.tar .ccache
 
       - name: Upload ccache cache
@@ -560,13 +560,13 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.target }}-${{ inputs.subtarget }}-ccache-cache
-          path: openwrt/ccache-${{ inputs.ccache_type }}-${{ inputs.target }}-${{ inputs.subtarget }}.tar
+          path: immortalwrt/ccache-${{ inputs.ccache_type }}-${{ inputs.target }}-${{ inputs.subtarget }}.tar
           retention-days: 1
 
       - name: Find external toolchain name
         id: get-toolchain-name
         if: inputs.upload_external_toolchain == true
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           TOOLCHAIN_NAME=$(ls bin/targets/${{inputs.target }}/${{ inputs.subtarget }} | grep toolchain)
           echo "toolchain-name=$TOOLCHAIN_NAME" >> $GITHUB_OUTPUT
@@ -576,5 +576,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.target }}-${{ inputs.subtarget }}-external-toolchain
-          path: openwrt/bin/targets/${{ inputs.target }}/${{ inputs.subtarget }}/${{ steps.get-toolchain-name.outputs.toolchain-name }}
+          path: immortalwrt/bin/targets/${{ inputs.target }}/${{ inputs.subtarget }}/${{ steps.get-toolchain-name.outputs.toolchain-name }}
           retention-days: 1
