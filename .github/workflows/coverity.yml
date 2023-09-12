@@ -23,8 +23,8 @@ jobs:
       include_feeds: true
       use_ccache_cache: false
       coverity_compiler_template_list: >-
-        x86_64-openwrt-linux-gcc
-        x86_64-openwrt-linux-musl-gcc
+        x86_64-immortalwrt-linux-gcc 
+        x86_64-immortalwrt-linux-musl-gcc
       #  qosify fails to build with cov-build
       coverity_check_packages: >-
         cgi-io
