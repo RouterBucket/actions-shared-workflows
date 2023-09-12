@@ -19,14 +19,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          path: openwrt
+          path: immortalwrt
 
       - name: Fix permission
-        run: chown -R buildbot:buildbot openwrt
+        run: chown -R buildbot:buildbot immortalwrt
 
       - name: Set configs for tools container
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: |
           touch .config
           echo CONFIG_DEVEL=y >> .config
@@ -36,12 +36,12 @@ jobs:
 
       - name: Make prereq
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make defconfig
 
       - name: Build tools
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: make tools/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Upload logs
@@ -49,19 +49,19 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: linux-buildbot-logs
-          path: openwrt/logs
+          path: immortalwrt/logs
 
       - name: Upload config
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: linux-buildbot-config
-          path: openwrt/.config
+          path: immortalwrt/.config
 
       - name: Archive prebuilt tools
         if: inputs.generate_prebuilt_artifacts == true
         shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
+        working-directory: immortalwrt
         run: tar -cf tools.tar staging_dir/host build_dir/host
 
       - name: Upload prebuilt tools
@@ -69,5 +69,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: linux-buildbot-prebuilt-tools
-          path: openwrt/tools.tar
+          path: immortalwrt/tools.tar
           retention-days: 1
