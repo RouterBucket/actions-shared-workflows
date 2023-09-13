@@ -100,7 +100,7 @@ jobs:
       subtarget: ${{ matrix.subtarget }}
       build_kernel: true
       build_all_kmods: true
-      upload_ccache_cache: ${{ github.repository_owner == 'routerbucket' }}
+      upload_ccache_cache: ${{ github.repository_owner == 'immortalwrt' }}
 
   check-kernel-patches:
     name: Check Kernel patches
@@ -118,7 +118,7 @@ jobs:
       subtarget: ${{ matrix.subtarget }}
 
   upload-ccache-cache-in-s3:
-    if: github.event_name == 'push' && github.repository_owner == 'routerbucket'
+    if: github.event_name == 'push' && github.repository_owner == 'immortalwrt'
     name: Upload ccache cache to s3
     needs: [determine_targets, build]
     strategy:
