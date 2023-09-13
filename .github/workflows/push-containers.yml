@@ -1,6 +1,7 @@
 name: Build and Push prebuilt tools container
 
 on:
+  workflow_dispatch:
   workflow_call:
 
 jobs:
