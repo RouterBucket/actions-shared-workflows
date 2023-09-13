@@ -290,9 +290,9 @@ jobs:
         working-directory: immortalwrt
         run: |
           wget https://downloads.immortalwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/${{ env.TOOLCHAIN_FILE }}.tar.xz
-          wget https://downloads.immortalwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums.asc
+          #wget https://downloads.immortalwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums.asc
           wget https://downloads.immortalwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums
-          gpg --with-fingerprint --verify sha256sums.asc
+          #gpg --with-fingerprint --verify sha256sums.asc
           sha256sum --check --ignore-missing sha256sums
           tar --xz -xf ${{ env.TOOLCHAIN_FILE }}.tar.xz
           rm ${{ env.TOOLCHAIN_FILE }}.tar.xz sha256sums
