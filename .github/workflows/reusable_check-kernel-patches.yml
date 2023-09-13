@@ -34,7 +34,7 @@ jobs:
             | tr '[:upper:]' '[:lower:]')
 
           if [ ${{ inputs.use_openwrt_container }} == "true" ]; then
-            OWNER_LC=immortalwrt
+            OWNER_LC=routerbucket/immortalwrt
           fi
 
           echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
